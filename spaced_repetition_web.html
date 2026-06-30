@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极简间隔复习系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 隐藏滚动条但保留滚动功能，让界面更清爽 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        
+        /* 富文本编辑器的占位符样式 */
+        [contenteditable=true]:empty:before {
+            content: attr(placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+            display: block; 
+        }
+        
+        /* 确保富文本编辑器内的基础排版正常 */
+        .rich-text p { margin-bottom: 0.5em; }
+        .rich-text b, .rich-text strong { font-weight: 700; color: #111827; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- 顶部导航栏 / Tabs -->
+    <nav class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-4xl mx-auto px-4 flex justify-center space-x-8">
+            <button id="tab-review" onclick="switchTab('review')" class="py-4 px-2 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-2 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                今日复习
+            </button>
+            <button id="tab-manage" onclick="switchTab('manage')" class="py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-2 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                内容管理
+            </button>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow max-w-4xl mx-auto w-full p-4 md:p-6">
+        
+        <!-- ================= 标签 1：复习区 ================= -->
+        <div id="view-review" class="block space-y-6">
+            
+            <!-- 时光机导航栏 -->
+            <div id="time-machine-bar" class="flex flex-wrap items-center justify-between bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                <button onclick="changeDate(-1)" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg flex items-center gap-1 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    前一天
+                </button>
+                
+                <div id="date-display-container" class="flex flex-col sm:flex-row items-center gap-2 my-2 sm:my-0">
+                    <!-- 动态插入日期显示 -->
+                </div>
+                
+                <button onclick="changeDate(1)" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg flex items-center gap-1 transition-colors">
+                    后一天
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+
+            <!-- 复习主卡片 -->
+            <div id="review-content-area" class="flex flex-col items-center">
+                <!-- 动态渲染内容 -->
+            </div>
+            
+        </div>
+
+        <!-- ================= 标签 2：管理区 ================= -->
+        <div id="view-manage" class="hidden space-y-6">
+            
+            <!-- 工具栏 -->
+            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <button onclick="document.getElementById('import-file').click()" class="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    导入数据
+                </button>
+                <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+                
+                <button onclick="exportData()" class="flex items-center gap-2 text-green-600 hover:bg-green-50 px-4 py-2 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    导出备份
+                </button>
+            </div>
+
+            <!-- 录入区 -->
+            <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                <h3 class="font-medium text-gray-700">添加新知识</h3>
+                
+                <!-- 富文本输入框，支持从备忘录保留粗体粘贴 -->
+                <div id="rich-input" contenteditable="true" placeholder="在此粘贴带格式的文本..." 
+                     class="rich-text w-full min-h-[120px] max-h-[300px] overflow-y-auto p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></div>
+                
+                <div class="flex justify-end">
+                    <button onclick="saveNewItem()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        保存并自动排期 (0,1,3,7,15,30天)
+                    </button>
+                </div>
+            </div>
+
+            <!-- 列表管理区 -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                    <h3 class="font-medium text-gray-700">全部记录</h3>
+                    <span id="total-count" class="text-sm text-gray-500">共 0 条</span>
+                </div>
+                <div id="manage-list" class="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
+                    <!-- 动态生成列表项 -->
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- 自定义 Toast 提示框 -->
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50 flex items-center gap-2">
+        <span id="toast-icon"></span>
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- 自定义确认删除弹窗 -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 transform transition-transform">
+            <h3 class="text-lg font-bold text-gray-900 mb-2">确定要移入废纸篓吗？</h3>
+            <p class="text-gray-500 text-sm mb-6">删除后将无法恢复，系统将重新计算您的复习进度。</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">取消</button>
+                <button id="confirm-delete-btn" class="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 核心逻辑 -->
+    <script>
+        // --- 核心状态 ---
+        let allItems = []; // 格式: { id: string, htmlContent: string, rawText: string, dateAdded: timestamp }
+        let simulatedDate = new Date();
+        let currentIndex = 0;
+        let itemToDeleteId = null;
+        let currentTab = 'review';
+
+        // --- 新增：本地自动存储逻辑 (localStorage) ---
+        const LOCAL_STORAGE_KEY = 'spacedRepetitionData';
+
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedData) {
+                try {
+                    allItems = JSON.parse(savedData);
+                } catch (e) {
+                    console.error("解析本地数据失败", e);
+                }
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allItems));
+        }
+
+        // --- 初始化 ---
+        window.onload = () => {
+            loadFromLocalStorage(); // 页面加载时自动读取本地数据
+            requestNotificationPermission();
+            startNotificationCron();
+            renderApp();
+        };
+
+        // --- UI 切换逻辑 ---
+        function switchTab(tab) {
+            currentTab = tab;
+            if (tab === 'review') {
+                document.getElementById('view-review').classList.remove('hidden');
+                document.getElementById('view-manage').classList.add('hidden');
+                document.getElementById('tab-review').className = 'py-4 px-2 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-2 transition-colors';
+                document.getElementById('tab-manage').className = 'py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-2 transition-colors';
+                renderReviewArea();
+            } else {
+                document.getElementById('view-review').classList.add('hidden');
+                document.getElementById('view-manage').classList.remove('hidden');
+                document.getElementById('tab-review').className = 'py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-2 transition-colors';
+                document.getElementById('tab-manage').className = 'py-4 px-2 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-2 transition-colors';
+                renderManageList();
+            }
+        }
+
+        function renderApp() {
+            if (currentTab === 'review') {
+                renderReviewArea();
+            } else {
+                renderManageList();
+            }
+        }
+
+        // --- 时光机与复习逻辑 ---
+        function getItemsForSimulatedDate() {
+            const dueDays = [0, 1, 3, 7, 15, 30];
+            const startOfSimulated = new Date(simulatedDate);
+            startOfSimulated.setHours(0, 0, 0, 0);
+
+            return allItems.filter(item => {
+                const startOfAdded = new Date(item.dateAdded);
+                startOfAdded.setHours(0, 0, 0, 0);
+                
+                // 忽略未来的词条
+                if (startOfSimulated < startOfAdded) return false;
+
+                const diffTime = Math.abs(startOfSimulated - startOfAdded);
+                const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                
+                return dueDays.includes(daysPassed);
+            });
+        }
+
+        function changeDate(days) {
+            const newDate = new Date(simulatedDate);
+            newDate.setDate(newDate.getDate() + days);
+            simulatedDate = newDate;
+            currentIndex = 0; // 重置进度
+            renderReviewArea();
+        }
+
+        function resetToToday() {
+            simulatedDate = new Date();
+            currentIndex = 0;
+            renderReviewArea();
+        }
+
+        function setSimulatedDate(e) {
+            if(e.target.value) {
+                simulatedDate = new Date(e.target.value);
+                currentIndex = 0;
+                renderReviewArea();
+            }
+        }
+
+        function navigateReview(direction) {
+            const dueItems = getItemsForSimulatedDate();
+            if (direction === -1 && currentIndex > 0) {
+                currentIndex--;
+            } else if (direction === 1 && currentIndex < dueItems.length - 1) {
+                currentIndex++;
+            }
+            renderReviewArea();
+        }
+
+        // --- 渲染复习界面 ---
+        function renderReviewArea() {
+            const isToday = new Date().toDateString() === simulatedDate.toDateString();
+            const dateContainer = document.getElementById('date-display-container');
+            const contentArea = document.getElementById('review-content-area');
+            const dueItems = getItemsForSimulatedDate();
+            
+            // 安全限制下标
+            currentIndex = Math.max(0, Math.min(currentIndex, dueItems.length - 1));
+
+            // 渲染时光机提示
+            if (isToday) {
+                dateContainer.innerHTML = `<span class="font-bold text-gray-800 text-lg">今日任务</span>`;
+                document.getElementById('time-machine-bar').className = "flex flex-wrap items-center justify-between bg-white rounded-xl shadow-sm p-4 border border-gray-100";
+            } else {
+                const dateStr = simulatedDate.toISOString().split('T')[0];
+                dateContainer.innerHTML = `
+                    <div class="flex items-center gap-2 bg-orange-100 px-3 py-1.5 rounded-lg border border-orange-200">
+                        <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <input type="date" value="${dateStr}" onchange="setSimulatedDate(event)" class="bg-transparent text-orange-700 font-medium text-sm outline-none cursor-pointer">
+                        <span class="text-orange-600 text-sm font-medium mr-2">(非今日)</span>
+                        <button onclick="resetToToday()" class="bg-orange-600 hover:bg-orange-700 text-white text-xs px-2 py-1 rounded shadow-sm transition-colors">回到今天</button>
+                    </div>
+                `;
+                document.getElementById('time-machine-bar').className = "flex flex-wrap items-center justify-between bg-orange-50 rounded-xl shadow-sm p-4 border border-orange-200";
+            }
+
+            // 渲染内容
+            if (dueItems.length === 0) {
+                contentArea.innerHTML = `
+                    <div class="text-center py-20">
+                        <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <h2 class="text-2xl font-bold text-gray-700 mb-2">${isToday ? '今天的复习任务已清空！' : '所选日期没有复习任务！'}</h2>
+                        <p class="text-gray-500">好好休息一下吧。</p>
+                    </div>
+                `;
+            } else {
+                const currentItem = dueItems[currentIndex];
+                contentArea.innerHTML = `
+                    <div class="w-full mb-4 flex justify-between items-center text-gray-500 font-medium">
+                        <span>复习进度</span>
+                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">${currentIndex + 1} / ${dueItems.length}</span>
+                    </div>
+                    
+                    <div class="w-full bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+                        <!-- 允许选中但通过 JS 阻止编辑的富文本展示区 -->
+                        <div class="rich-text text-lg text-gray-800 leading-relaxed selection:bg-blue-200" style="min-height: 150px;">
+                            ${currentItem.htmlContent}
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 md:gap-8">
+                        <button onclick="navigateReview(-1)" ${currentIndex === 0 ? 'disabled' : ''} class="p-3 rounded-full ${currentIndex === 0 ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100'} transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </button>
+                        
+                        <button onclick="copyCurrentToClipboard()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-xl shadow-md transition-transform active:scale-95 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            一键复制
+                        </button>
+
+                        <button onclick="navigateReview(1)" ${currentIndex === dueItems.length - 1 ? 'disabled' : ''} class="p-3 rounded-full ${currentIndex === dueItems.length - 1 ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100'} transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // --- 数据管理逻辑 ---
+        function saveNewItem() {
+            const editor = document.getElementById('rich-input');
+            const htmlContent = editor.innerHTML;
+            const rawText = editor.innerText || editor.textContent;
+
+            if (rawText.trim() === '') {
+                showToast('不能保存空内容哦', 'error');
+                return;
+            }
+
+            const newItem = {
+                id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                htmlContent: htmlContent,
+                rawText: rawText,
+                dateAdded: new Date().getTime()
+            };
+
+            allItems.unshift(newItem); // 添加到最前面
+            saveToLocalStorage(); // 新增：保存到本地
+            editor.innerHTML = ''; // 清空
+            showToast('已保存并加入排期！', 'success');
+            
+            if (currentTab === 'review') renderReviewArea();
+            else renderManageList();
+        }
+
+        function updateItemDate(id, newDateString) {
+            const item = allItems.find(i => i.id === id);
+            if (item && newDateString) {
+                const newDate = new Date(newDateString);
+                // 保持原来的时分秒，只改年月日
+                const oldDate = new Date(item.dateAdded);
+                newDate.setHours(oldDate.getHours(), oldDate.getMinutes(), oldDate.getSeconds());
+                item.dateAdded = newDate.getTime();
+                saveToLocalStorage(); // 新增：更改日期后保存到本地
+                showToast('排期已更新', 'success');
+            }
+        }
+
+        function promptDelete(id) {
+            itemToDeleteId = id;
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            itemToDeleteId = null;
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+            if (itemToDeleteId) {
+                allItems = allItems.filter(item => item.id !== itemToDeleteId);
+                saveToLocalStorage(); // 新增：删除后保存到本地
+                closeModal();
+                showToast('记录已删除', 'success');
+                renderManageList();
+            }
+        });
+
+        function renderManageList() {
+            const listContainer = document.getElementById('manage-list');
+            document.getElementById('total-count').innerText = `共 ${allItems.length} 条`;
+            
+            if (allItems.length === 0) {
+                listContainer.innerHTML = '<div class="p-8 text-center text-gray-400">暂无数据，请先添加新知识。</div>';
+                return;
+            }
+
+            listContainer.innerHTML = allItems.map(item => {
+                const dateStr = new Date(item.dateAdded).toISOString().split('T')[0];
+                return `
+                    <div class="p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center hover:bg-gray-50 transition-colors">
+                        <div class="flex-grow min-w-0">
+                            <!-- 仅展示纯文本截断 -->
+                            <p class="text-gray-800 line-clamp-2 leading-relaxed text-sm">${item.rawText}</p>
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0 mt-2 sm:mt-0">
+                            <div class="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <input type="date" value="${dateStr}" onchange="updateItemDate('${item.id}', event.target.value)" class="bg-transparent text-sm text-gray-600 outline-none cursor-pointer">
+                            </div>
+                            <button onclick="promptDelete('${item.id}')" class="p-2 text-red-500 hover:bg-red-50 rounded-md transition-colors" title="删除">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- 导入与导出 (JSON 持久化) ---
+        function exportData() {
+            if (allItems.length === 0) {
+                showToast("没有数据可以导出", "error");
+                return;
+            }
+            const dataStr = JSON.stringify(allItems, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `复习备份_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("备份导出成功！", "success");
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedItems = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedItems)) throw new Error("格式错误");
+                    
+                    let newCount = 0;
+                    importedItems.forEach(item => {
+                        // 查重：避免重复导入相同的记录
+                        const exists = allItems.some(existing => existing.rawText === item.rawText && existing.dateAdded === item.dateAdded);
+                        if (!exists) {
+                            allItems.push(item);
+                            newCount++;
+                        }
+                    });
+                    
+                    // 重新按日期倒序排序
+                    allItems.sort((a, b) => b.dateAdded - a.dateAdded);
+                    
+                    saveToLocalStorage(); // 新增：导入后将合并的数据覆盖保存到本地
+                    showToast(`成功导入了 ${newCount} 条新记录！`, "success");
+                    renderApp();
+                } catch (error) {
+                    showToast("文件解析失败，请确保是正确的备份文件", "error");
+                }
+                // 清空 input 允许重复选择同一个文件
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        // --- 剪贴板 ---
+        function copyCurrentToClipboard() {
+            const dueItems = getItemsForSimulatedDate();
+            if(dueItems.length === 0) return;
+            const item = dueItems[currentIndex];
+            
+            // Web 环境下，由于 iframe 和安全策略，使用 fallback 方法提取富文本或纯文本
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = item.htmlContent;
+            // 处理换行为真实换行符，针对不同浏览器的简易兼容
+            tempDiv.innerHTML = tempDiv.innerHTML.replace(/<br\s*[\/]?>/gi, "\n").replace(/<p>/gi, "").replace(/<\/p>/gi, "\n");
+            
+            const textToCopy = tempDiv.innerText || tempDiv.textContent;
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy.trim();
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast("已连带格式提取至剪贴板！", "success");
+            } catch (err) {
+                showToast("复制失败，请手动选择复制", "error");
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // --- 魔鬼通知时间表系统 ---
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    Notification.requestPermission();
+                }
+            }
+        }
+
+        function startNotificationCron() {
+            // 星期一=1, 星期日=0
+            const schedule = {
+                1: ["16:00", "17:15", "18:00", "18:30"], // 周一
+                2: ["16:00", "17:15", "18:00", "18:30"], // 周二
+                3: ["21:30", "22:10"],                   // 周三
+                4: ["18:45", "19:45"],                   // 周四
+                5: ["21:30", "22:10"],                   // 周五
+                6: ["18:45", "19:20", "20:00"],          // 周六
+                0: ["18:45", "19:20", "20:00"]           // 周日
+            };
+
+            // 每分钟检查一次时间
+            setInterval(() => {
+                const now = new Date();
+                const day = now.getDay();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                
+                // 确保在这一分钟的最开始触发，避免一分钟内重复触发
+                if (schedule[day] && schedule[day].includes(timeStr) && now.getSeconds() < 2) {
+                    if (Notification.permission === "granted") {
+                        new Notification("复习时间到！", {
+                            body: "有根据 0,1,3,7,15,30 规则需要复习的记忆内容，快去看看吧。",
+                            icon: "https://cdn-icons-png.flaticon.com/512/3246/3246633.png" // 书本icon
+                        });
+                    }
+                }
+            }, 1000); // 1秒轮询一次，保证在指定分钟的第0-1秒精确命中
+        }
+
+        // --- 自定义 Toast 系统 ---
+        let toastTimeout;
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            document.getElementById('toast-message').innerText = message;
+            
+            if (type === 'success') {
+                icon.innerHTML = `<svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+            } else {
+                icon.innerHTML = `<svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.classList.remove('opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
