@@ -4,15 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>间隔复习系统</title>
-    <!-- 注入极致优雅的原生 SVG Favicon，完美适配高分屏，不依赖任何外部图片链接 -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%233b82f6'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cpath d='M10 10h12v2l-4 4 4 4v2H10v-2l4-4-4-4V10z' stroke='white' stroke-width='2' fill='none' stroke-linejoin='round'/%3E%3Ccircle cx='16' cy='16' r='11' stroke='white' stroke-width='1.5' stroke-dasharray='4 2' fill='none'/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
         [contenteditable=true]:empty:before { content: attr(placeholder); color: #9ca3af; pointer-events: none; display: block; }
         .rich-text p { margin-bottom: 0.5em; }
         .rich-text b, .rich-text strong { font-weight: 700; color: #111827; }
@@ -20,48 +19,68 @@
         .drag-over { background-color: #f0fdf4 !important; border-color: #22c55e !important; border-style: dashed !important; }
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        /* 隐藏功能类 */
         .tab-hidden { display: none !important; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
 
-    <!-- 顶部导航栏 (重构为品牌加功能键结构) -->
-    <nav class="bg-white shadow-sm sticky top-0 z-10 h-16">
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white shadow-sm sticky top-0 z-20 h-16">
         <div class="max-w-4xl mx-auto px-4 flex justify-between items-center h-full">
             
             <!-- 左侧品牌 Logo 区 -->
             <div class="flex items-center gap-2.5">
                 <div class="w-9 h-9 shrink-0 shadow-sm rounded-lg overflow-hidden">
                     <svg class="w-full h-full" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="logo-g" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#3b82f6"/>
-                                <stop offset="100%" stop-color="#6366f1"/>
-                            </linearGradient>
-                        </defs>
+                        <defs><linearGradient id="logo-g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs>
                         <rect width="32" height="32" rx="8" fill="url(#logo-g)"/>
                         <path d="M10 10h12v2l-4 4 4 4v2H10v-2l4-4-4-4V10z" stroke="white" stroke-width="2" fill="none" stroke-linejoin="round"/>
                         <circle cx="16" cy="16" r="11" stroke="white" stroke-width="1.5" stroke-dasharray="4 2" fill="none"/>
                     </svg>
                 </div>
-                <span class="font-extrabold text-lg text-gray-800 tracking-tight hidden sm:block">Spaced Flow</span>
+                <span class="font-extrabold text-lg text-gray-800 tracking-tight hidden md:block">Spaced Flow</span>
             </div>
 
-            <!-- 右侧 Tab 按钮区 -->
-            <div class="flex space-x-1 sm:space-x-4 h-full items-center">
-                <button id="tab-review" onclick="switchTab('review')" class="h-full px-3 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            <!-- 右侧 Tab 按钮区 & 定制化项目选择器 -->
+            <div class="flex space-x-1 sm:space-x-3 h-full items-center">
+                <button id="tab-review" onclick="switchTab('review')" class="h-full px-2 sm:px-3 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none">
+                    <svg class="w-5 h-5 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                     <span>复习</span>
                 </button>
-                <button id="tab-manage" onclick="switchTab('manage')" class="h-full px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors focus:outline-none">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <button id="tab-manage" onclick="switchTab('manage')" class="h-full px-2 sm:px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors focus:outline-none">
+                    <svg class="w-5 h-5 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     <span>管理</span>
                 </button>
-                <button id="tab-trash" onclick="switchTab('trash')" class="h-full px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors focus:outline-none">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <button id="tab-trash" onclick="switchTab('trash')" class="h-full px-2 sm:px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors focus:outline-none">
+                    <svg class="w-5 h-5 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     <span>废纸篓</span>
                 </button>
+                
+                <div class="h-6 w-px bg-gray-200 mx-1"></div>
+                
+                <!-- 自定义项目下拉菜单 -->
+                <div class="relative inline-block text-left" id="project-dropdown-container">
+                    <button onclick="toggleProjectDropdown()" class="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <span id="current-project-label" class="truncate max-w-[80px] sm:max-w-[120px]">默认项目</span>
+                        <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <!-- 下拉面板 -->
+                    <div id="project-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden transform origin-top-right transition-all">
+                        <div class="max-h-56 overflow-y-auto p-1" id="project-dropdown-list">
+                            <!-- 动态项目列表注入在此 -->
+                        </div>
+                        <div class="border-t border-gray-100 p-1 bg-gray-50 flex flex-col">
+                            <button onclick="openModal('modal-new-project')" class="w-full text-left px-3 py-2.5 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium flex items-center gap-2 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> 
+                                新建项目...
+                            </button>
+                            <button onclick="openManageProjectsModal()" class="w-full text-left px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-200 rounded-lg font-medium flex items-center gap-2 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> 
+                                管理与导入记录
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -116,6 +135,18 @@
                 </div>
             </div>
 
+            <!-- 本地文件导出/导入入口 (纯净分离版) -->
+            <div class="flex justify-end items-center px-2 gap-4 flex-wrap">
+                <button onclick="document.getElementById('import-json-input').click()" class="text-xs font-medium text-blue-600 hover:text-blue-800 underline decoration-dashed transition-colors flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>导入外部 JSON
+                </button>
+                <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="handleImportFile(event)">
+                <span class="text-gray-300 text-xs">|</span>
+                <button onclick="exportData()" class="text-xs font-medium text-gray-500 hover:text-indigo-600 underline decoration-dashed transition-colors flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>纯净导出当前项目
+                </button>
+            </div>
+
             <!-- 录入区 -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col">
                 <div class="p-4 border-b border-gray-100 bg-gray-50/50 rounded-t-xl flex items-center gap-4">
@@ -141,7 +172,10 @@
             <!-- 列表管理区 -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                    <h3 class="font-medium text-gray-700">正在复习的记录</h3>
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-medium text-gray-700">正在复习</h3>
+                        <span id="manage-list-badge" class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-medium border border-indigo-200"></span>
+                    </div>
                     <span id="total-count" class="text-sm text-gray-500">共 0 条</span>
                 </div>
                 <div id="manage-list" class="divide-y divide-gray-100 max-h-[500px] overflow-y-auto"></div>
@@ -155,6 +189,7 @@
                     <div class="flex items-center gap-2">
                         <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         <h3 class="font-bold text-red-700">废纸篓 (墓碑缓存区)</h3>
+                        <span id="trash-list-badge" class="bg-red-200 text-red-800 px-2 py-0.5 rounded-full text-xs font-medium border border-red-300 ml-1"></span>
                     </div>
                     <span id="trash-count" class="text-sm text-red-500">共 0 条</span>
                 </div>
@@ -163,12 +198,79 @@
         </div>
     </main>
 
+    <!-- ================= 所有模态框 (Modals) ================= -->
+    <!-- 模态框背景遮罩 -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-40 transition-opacity"></div>
+
+    <!-- 1. 新建项目 Modal -->
+    <div id="modal-new-project" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-2xl shadow-2xl z-50 hidden flex-col overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <h3 class="font-bold text-gray-800">新建工作区</h3>
+            <button onclick="closeModal('modal-new-project')" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        <div class="p-5">
+            <input type="text" id="new-project-input" placeholder="例如：日语语法、考研词汇..." class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeModal('modal-new-project')" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">取消</button>
+                <button onclick="confirmNewProject()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">确认新建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 管理与导入记录 Modal -->
+    <div id="modal-manage-projects" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50 hidden flex-col overflow-hidden max-h-[80vh]">
+        <div class="flex border-b border-gray-100 bg-gray-50/50">
+            <button onclick="switchManageTab('projects')" id="manage-tab-projects" class="flex-1 py-4 text-sm font-bold text-blue-600 border-b-2 border-blue-500 focus:outline-none transition-colors">项目管理</button>
+            <button onclick="switchManageTab('history')" id="manage-tab-history" class="flex-1 py-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition-colors">导入记录</button>
+            <button onclick="closeModal('modal-manage-projects')" class="p-4 text-gray-400 hover:text-gray-600 border-b-2 border-transparent"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        <!-- 项目管理列表 -->
+        <div id="manage-pane-projects" class="p-5 overflow-y-auto flex-grow">
+            <div id="project-manage-list" class="space-y-2"></div>
+        </div>
+        <!-- 导入记录列表 -->
+        <div id="manage-pane-history" class="p-5 overflow-y-auto flex-grow hidden">
+            <div id="import-history-list" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- 3. 定向导入确认 Modal -->
+    <div id="modal-import-config" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl shadow-2xl z-50 hidden flex-col overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-blue-50">
+            <div class="flex items-center gap-2 text-blue-700">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <h3 class="font-bold">导入纯净数据</h3>
+            </div>
+            <button onclick="closeModal('modal-import-config')" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        <div class="p-5 space-y-4">
+            <p class="text-sm text-gray-600">已解析到 <strong id="import-count-preview" class="text-blue-600">0</strong> 条数据。请选择你要将它们安置到哪个项目中？</p>
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <label class="block text-xs font-medium text-gray-500 mb-2">目标工作区</label>
+                <select id="import-target-project" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                    <!-- 动态注入 -->
+                </select>
+            </div>
+            <p class="text-xs text-gray-400">提示：如果你选错了项目，可以在「管理与导入记录」中安全撤回本次导入操作。</p>
+            <div class="flex justify-end gap-3 mt-2">
+                <button onclick="closeModal('modal-import-config')" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">取消</button>
+                <button onclick="executeImport()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">确认分配并导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 确认删除弹窗 -->
+    <div id="confirm-modal" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-2xl shadow-xl z-50 hidden p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-2">确定要移入废纸篓吗？</h3>
+        <div class="flex justify-end gap-3 mt-6">
+            <button onclick="closeModal('confirm-modal')" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg">取消</button>
+            <button id="confirm-delete-btn" class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg">确认删除</button>
+        </div>
+    </div>
+
     <!-- 全局 Loading 遮罩层 -->
     <div id="loading-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex-col items-center justify-center z-[100] transition-opacity">
-        <svg class="spinner w-12 h-12 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
+        <svg class="spinner w-12 h-12 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         <p id="loading-text" class="text-white font-medium text-lg tracking-wide">正在初始化引擎...</p>
         <p id="loading-subtext" class="text-gray-400 text-sm mt-2">请勿关闭页面</p>
     </div>
@@ -184,10 +286,8 @@
         // ================= 谷歌授权与目录配置 =================
         const CLIENT_ID_STORAGE_KEY = 'google_drive_client_id';
         const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-        
-        // 核心变化：将元数据与文件分离！
         const META_FILE_NAME = '_Spaced_Review_Metadata_V2_.json'; 
-        const FOLDER_ID = '11qcpdV5LN44497q5HsPtXxNbq7yr04gB'; // 你指定的云端文件夹 ID
+        const FOLDER_ID = '11qcpdV5LN44497q5HsPtXxNbq7yr04gB'; 
         
         let tokenClient;
         let accessToken = null;
@@ -196,7 +296,17 @@
         let allItems = []; 
         let simulatedDate = new Date();
         let currentIndex = 0;
+        let itemToDeleteId = null;
         let currentTab = 'review';
+        
+        // 项目与导入记录配置
+        let projects = JSON.parse(localStorage.getItem('spaced_projects')) || ['默认项目'];
+        let currentProject = localStorage.getItem('spaced_current_project') || '默认项目';
+        if (!projects.includes('默认项目')) projects.unshift('默认项目');
+        
+        // [{ batchId: '...', date: timestamp, projectName: '...', count: N }]
+        let importHistory = JSON.parse(localStorage.getItem('spaced_import_history')) || [];
+        let tempImportData = []; // 用于中转解析的 JSON
 
         // --- IndexedDB 本地存储底层 ---
         const DB_NAME = 'SpacedRepetitionDB';
@@ -205,7 +315,7 @@
 
         function openDB() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, 2); // 升级版本号应对结构变化
+                const request = indexedDB.open(DB_NAME, 3); // 升级版本
                 request.onupgradeneeded = (e) => {
                     if (!e.target.result.objectStoreNames.contains(STORE_NAME)) {
                         e.target.result.createObjectStore(STORE_NAME);
@@ -225,12 +335,16 @@
                 request.onsuccess = () => {
                     if (request.result) {
                         allItems = request.result;
-                        // 数据迁移处理老数据补全缺省字段
                         allItems.forEach(item => {
                             if(item.trashed === undefined) item.trashed = false;
                             if(item.isDeleted === undefined) item.isDeleted = false;
+                            if(item.project === undefined) item.project = '默认项目';
+                            if(item.importBatchId === undefined) item.importBatchId = null;
+                            if(!projects.includes(item.project)) projects.push(item.project);
                         });
+                        localStorage.setItem('spaced_projects', JSON.stringify(projects));
                     }
+                    renderProjectDropdown();
                     renderApp(); 
                 };
             } catch (e) {
@@ -251,14 +365,306 @@
             }
         }
 
-        // --- 初始化入口 ---
         window.onload = () => {
             requestNotificationPermission();
             startNotificationCron();
             setupRichTextEditorEvents(); 
+            renderProjectDropdown();
             loadFromStorage(); 
             checkAndInitGoogleAuth();
         };
+
+        // ================= 模态框与通用 UI 逻辑 =================
+        function openModal(id) {
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById('modal-backdrop').classList.add('hidden');
+            document.getElementById(id).classList.add('hidden');
+        }
+        
+        // ================= 定制化项目下拉菜单与管理 =================
+        function toggleProjectDropdown() {
+            const menu = document.getElementById('project-dropdown-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('project-dropdown-container');
+            const menu = document.getElementById('project-dropdown-menu');
+            if (container && !container.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function renderProjectDropdown() {
+            const listObj = document.getElementById('project-dropdown-list');
+            document.getElementById('current-project-label').innerText = currentProject;
+            
+            listObj.innerHTML = projects.map(p => `
+                <button onclick="changeProject('${p}')" class="w-full text-left px-3 py-2 text-sm rounded-lg flex items-center justify-between transition-colors ${p === currentProject ? 'bg-blue-50 text-blue-700 font-bold' : 'text-gray-700 hover:bg-gray-100'}">
+                    <span class="truncate">${p}</span>
+                    ${p === currentProject ? `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>` : ''}
+                </button>
+            `).join('');
+
+            // 更新页面中的徽章
+            const manageBadge = document.getElementById('manage-list-badge');
+            const trashBadge = document.getElementById('trash-list-badge');
+            if(manageBadge) manageBadge.innerText = currentProject;
+            if(trashBadge) trashBadge.innerText = currentProject;
+        }
+
+        function changeProject(newProject) {
+            currentProject = newProject;
+            localStorage.setItem('spaced_current_project', currentProject);
+            currentIndex = 0; 
+            document.getElementById('project-dropdown-menu').classList.add('hidden');
+            renderProjectDropdown();
+            renderApp();
+            showToast(`工作区已切换至：${currentProject}`, 'success');
+        }
+
+        function openNewProjectModal() {
+            document.getElementById('project-dropdown-menu').classList.add('hidden');
+            document.getElementById('new-project-input').value = '';
+            openModal('modal-new-project');
+            setTimeout(() => document.getElementById('new-project-input').focus(), 100);
+        }
+
+        function confirmNewProject() {
+            const name = document.getElementById('new-project-input').value.trim();
+            if (!name) return showToast('名称不能为空', 'error');
+            if (projects.includes(name)) return showToast('项目已存在', 'error');
+            
+            projects.push(name);
+            localStorage.setItem('spaced_projects', JSON.stringify(projects));
+            closeModal('modal-new-project');
+            changeProject(name);
+        }
+
+        // ================= 管理与导入记录中心 =================
+        function openManageProjectsModal() {
+            document.getElementById('project-dropdown-menu').classList.add('hidden');
+            switchManageTab('projects');
+            openModal('modal-manage-projects');
+        }
+
+        function switchManageTab(tab) {
+            const btnP = document.getElementById('manage-tab-projects');
+            const btnH = document.getElementById('manage-tab-history');
+            const paneP = document.getElementById('manage-pane-projects');
+            const paneH = document.getElementById('manage-pane-history');
+
+            if (tab === 'projects') {
+                btnP.className = 'flex-1 py-4 text-sm font-bold text-blue-600 border-b-2 border-blue-500 focus:outline-none transition-colors';
+                btnH.className = 'flex-1 py-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition-colors';
+                paneP.classList.remove('hidden'); paneH.classList.add('hidden');
+                renderProjectManageList();
+            } else {
+                btnH.className = 'flex-1 py-4 text-sm font-bold text-blue-600 border-b-2 border-blue-500 focus:outline-none transition-colors';
+                btnP.className = 'flex-1 py-4 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition-colors';
+                paneH.classList.remove('hidden'); paneP.classList.add('hidden');
+                renderImportHistoryList();
+            }
+        }
+
+        function renderProjectManageList() {
+            const list = document.getElementById('project-manage-list');
+            list.innerHTML = projects.map(p => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span class="font-medium text-sm text-gray-700 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                        ${p}
+                    </span>
+                    <button onclick="deleteProject('${p}')" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="删除项目">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function deleteProject(name) {
+            if (projects.length <= 1) return showToast('必须至少保留一个项目', 'error');
+            const itemsInProject = allItems.filter(i => i.project === name && !i.isDeleted);
+            if (itemsInProject.length > 0) {
+                if(!confirm(`项目 [${name}] 中还有 ${itemsInProject.length} 条记录。\n删除项目会将这些记录打上墓碑粉碎，不可逆！确定吗？`)) return;
+                // Tombstone the items
+                allItems.forEach(i => {
+                    if (i.project === name) {
+                        i.isDeleted = true; i.htmlContent = ""; i.dateAdded = new Date().getTime();
+                    }
+                });
+                saveToStorage();
+            }
+            
+            projects = projects.filter(p => p !== name);
+            localStorage.setItem('spaced_projects', JSON.stringify(projects));
+            if (currentProject === name) changeProject(projects[0]);
+            else renderProjectManageList();
+            renderProjectDropdown();
+            showToast(`项目 [${name}] 已抹除`, 'success');
+        }
+
+        function renderImportHistoryList() {
+            const list = document.getElementById('import-history-list');
+            if (importHistory.length === 0) {
+                list.innerHTML = `<div class="text-center py-8 text-sm text-gray-400">暂无导入记录</div>`;
+                return;
+            }
+            list.innerHTML = importHistory.slice().reverse().map(record => `
+                <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded uppercase">IMPORT</span>
+                            <span class="text-sm font-medium text-gray-800">导入了 ${record.count} 条记录</span>
+                        </div>
+                        <p class="text-xs text-gray-500">目标项目：${record.projectName} · ${new Date(record.date).toLocaleString()}</p>
+                    </div>
+                    <button onclick="undoImport('${record.batchId}')" class="px-3 py-1.5 text-xs font-medium text-red-600 bg-white border border-red-200 hover:bg-red-50 rounded-lg transition-colors whitespace-nowrap">
+                        安全撤回
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // 安全撤回 (墓碑化机制，保证增量引擎兼容)
+        async function undoImport(batchId) {
+            if (!confirm("确定要撤回本次导入吗？\n系统将以安全墓碑机制注销这批数据，不会影响云端同步的安全。")) return;
+            
+            let undoCount = 0;
+            allItems.forEach(i => {
+                if (i.importBatchId === batchId && !i.isDeleted) {
+                    i.isDeleted = true;
+                    i.htmlContent = "";
+                    i.dateAdded = new Date().getTime();
+                    undoCount++;
+                }
+            });
+            
+            importHistory = importHistory.filter(h => h.batchId !== batchId);
+            localStorage.setItem('spaced_import_history', JSON.stringify(importHistory));
+            
+            await saveToStorage();
+            renderImportHistoryList();
+            renderApp();
+            showToast(`已成功墓碑化注销 ${undoCount} 条错误导入数据`, 'success');
+        }
+
+        // ================= 纯净导出与定向导入 =================
+        function exportData() {
+            // 纯净导出：只筛选当前项目，且剥离 project 和 importBatchId 元数据
+            const dataToExport = allItems
+                .filter(i => i.project === currentProject && !i.isDeleted)
+                .map(({ project, importBatchId, ...cleanItem }) => cleanItem);
+            
+            if (dataToExport.length === 0) return showToast("当前项目中没有数据可以导出", "error");
+            
+            showToast("正在生成纯净 JSON 数据...", "success");
+            setTimeout(() => {
+                const dataStr = JSON.stringify(dataToExport, null, 2);
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `复习导出_[${currentProject}]_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast("当前项目纯净备份导出成功！", "success");
+            }, 100);
+        }
+
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedItems = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedItems)) throw new Error("格式错误");
+                    tempImportData = importedItems; // 暂存
+                    
+                    // 打开定向分配模态框
+                    document.getElementById('import-count-preview').innerText = tempImportData.length;
+                    const sel = document.getElementById('import-target-project');
+                    sel.innerHTML = projects.map(p => `<option value="${p}">${p}</option>`).join('') + `<option value="_ADD_NEW_">+ 新建一个项目承载</option>`;
+                    sel.value = currentProject;
+                    
+                    openModal('modal-import-config');
+                } catch (error) {
+                    showToast("JSON 解析失败，请检查文件", "error");
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        async function executeImport() {
+            const sel = document.getElementById('import-target-project');
+            let targetProject = sel.value;
+            
+            if (targetProject === '_ADD_NEW_') {
+                const name = prompt("请输入新建承载项目的名称：");
+                if (name && name.trim() !== '') {
+                    targetProject = name.trim();
+                    if (!projects.includes(targetProject)) {
+                        projects.push(targetProject);
+                        localStorage.setItem('spaced_projects', JSON.stringify(projects));
+                        renderProjectDropdown();
+                    }
+                } else {
+                    return showToast("取消导入", "error");
+                }
+            }
+
+            const batchId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            let newCount = 0;
+            
+            tempImportData.forEach(item => {
+                // 简单的防重，仅作保护
+                const exists = allItems.some(existing => existing.id === item.id && !existing.isDeleted);
+                if (!exists) {
+                    item.project = targetProject; // 定向归属
+                    item.importBatchId = batchId; // 追溯ID
+                    
+                    // 确保缺失默认字段被补全
+                    if(item.trashed === undefined) item.trashed = false;
+                    if(item.isDeleted === undefined) item.isDeleted = false;
+                    
+                    allItems.push(item);
+                    newCount++;
+                }
+            });
+            
+            if (newCount > 0) {
+                allItems.sort((a, b) => b.dateAdded - a.dateAdded);
+                
+                importHistory.push({
+                    batchId: batchId,
+                    date: new Date().getTime(),
+                    projectName: targetProject,
+                    count: newCount
+                });
+                localStorage.setItem('spaced_import_history', JSON.stringify(importHistory));
+                
+                await saveToStorage();
+                
+                // 如果导入到了非当前项目，自动切换过去看看
+                if (currentProject !== targetProject) changeProject(targetProject);
+                else renderApp();
+                
+                showToast(`成功将 ${newCount} 条数据导入至 [${targetProject}]！`, "success");
+            } else {
+                showToast("数据全部重复，无需导入", "error");
+            }
+            
+            tempImportData = [];
+            closeModal('modal-import-config');
+        }
 
         // ================= Google Drive 动态授权逻辑 =================
         function checkAndInitGoogleAuth() {
@@ -370,73 +776,54 @@
             return res.json();
         }
 
-        // 核心同步入口
         async function smartDeltaSync() {
             if (!accessToken) return handleAuthClick();
 
             showLoading("正在拉取云端目录索引...");
             try {
-                // 1. 获取云端元数据索引
                 let cloudMetaId = await findFileByName(META_FILE_NAME);
                 let cloudMetadata = [];
                 if (cloudMetaId) {
                     cloudMetadata = await downloadFileContent(cloudMetaId);
                 }
 
-                // 2. 建立双向对比字典 (Dict)
                 const cloudMap = new Map(cloudMetadata.map(i => [i.id, i]));
                 const toUploadLocalItems = []; 
                 const toDownloadCloudMeta = []; 
 
-                // 3. 交叉比对与冲突解决
-                // 3.1 本地扫云端
                 for (const local of allItems) {
                     const cloud = cloudMap.get(local.id);
                     if (!cloud) {
-                        // 本地有，云端完全没有 -> 需要将内容作为一个独立文件上传，并加入索引
                         toUploadLocalItems.push(local);
                     } else {
-                        // 两边都有，根据业务逻辑，内容永不改变，只比对时间戳（排期/删除状态）
                         if (local.dateAdded > cloud.dateAdded) {
-                            // 本地的状态更新，采用本地状态，不用重传大文件，只需继承其云端文件id
                             local.driveFileId = cloud.driveFileId;
                         } else if (local.dateAdded < cloud.dateAdded) {
-                            // 云端的状态更新 -> 覆盖本地的元数据
                             local.dateAdded = cloud.dateAdded;
                             local.trashed = cloud.trashed;
                             local.isDeleted = cloud.isDeleted;
                             local.driveFileId = cloud.driveFileId;
-                            
-                            // 墓碑处理：如果云端被判定为彻底粉碎，本地也清空大文件
+                            local.project = cloud.project || '默认项目'; 
                             if (local.isDeleted) local.htmlContent = "";
                         }
                     }
                 }
 
                 const localMap = new Map(allItems.map(i => [i.id, i]));
-                
-                // 3.2 云端扫本地
                 for (const cloud of cloudMetadata) {
-                    if (!localMap.has(cloud.id)) {
-                        // 云端有，本地没有 -> 需要去云端拉取这个独立的大碎片文件（如果它不是墓碑的话）
-                        toDownloadCloudMeta.push(cloud);
-                    }
+                    if (!localMap.has(cloud.id)) toDownloadCloudMeta.push(cloud);
                 }
 
-                // 4. 执行按需下载 (仅针对缺失碎片)
                 for (let i = 0; i < toDownloadCloudMeta.length; i++) {
                     const cMeta = toDownloadCloudMeta[i];
                     showLoading(`正在下载云端缺失碎片...`, `进度: ${i + 1} / ${toDownloadCloudMeta.length}`);
                     
                     let newHtmlContent = "";
-                    // 如果不是墓碑，才去下载真正的内容
                     if (!cMeta.isDeleted && cMeta.driveFileId) {
                         try {
                             const contentBlob = await downloadFileContent(cMeta.driveFileId);
                             newHtmlContent = contentBlob.htmlContent;
-                        } catch(e) {
-                            console.warn("碎片下载失败可能已丢失", e);
-                        }
+                        } catch(e) { console.warn("碎片下载失败", e); }
                     }
                     
                     allItems.push({
@@ -446,36 +833,37 @@
                         dateAdded: cMeta.dateAdded,
                         trashed: cMeta.trashed,
                         isDeleted: cMeta.isDeleted,
-                        driveFileId: cMeta.driveFileId
+                        driveFileId: cMeta.driveFileId,
+                        project: cMeta.project || '默认项目'
                     });
                 }
 
-                // 5. 执行按需上传 (本地独有或比云端新的文件)
                 for (let i = 0; i < toUploadLocalItems.length; i++) {
                     const localItem = toUploadLocalItems[i];
-                    // 如果该任务已经是空内容或者是墓碑，就不必浪费流量上传不存在的文件了
                     if (localItem.isDeleted || !localItem.htmlContent) continue;
 
                     showLoading(`正在上传新知识原图...`, `进度: ${i + 1} / ${toUploadLocalItems.length}`);
                     try {
                         const individualFileName = `${localItem.id}.json`;
-                        // 检索该大文件是否已经在云端目录中独立存在
                         let individualFileId = await findFileByName(individualFileName);
                         const individualPayload = JSON.stringify({ htmlContent: localItem.htmlContent });
                         
                         individualFileId = await uploadFileContent(individualFileName, individualPayload, individualFileId);
                         localItem.driveFileId = individualFileId;
-                    } catch (e) {
-                        console.error("上传单独大文件失败", e);
-                    }
+                    } catch (e) { console.error("上传单独大文件失败", e); }
                 }
 
-                // 重新将合并后的数据整理成数组，并倒序排列
                 allItems.sort((a, b) => b.dateAdded - a.dateAdded);
+                
+                allItems.forEach(i => {
+                    if(!projects.includes(i.project)) projects.push(i.project);
+                });
+                localStorage.setItem('spaced_projects', JSON.stringify(projects));
+                renderProjectDropdown();
+
                 await saveToStorage(); 
                 renderApp();
 
-                // 6. 将最轻量、纯净的索引推回云端目录
                 showLoading("同步进入尾声", "正在更新云端灯塔索引...");
                 const newCloudMetadata = allItems.map(i => ({
                     id: i.id,
@@ -483,7 +871,8 @@
                     dateAdded: i.dateAdded,
                     trashed: i.trashed,
                     isDeleted: i.isDeleted,
-                    driveFileId: i.driveFileId
+                    driveFileId: i.driveFileId,
+                    project: i.project 
                 }));
 
                 await uploadFileContent(META_FILE_NAME, JSON.stringify(newCloudMetadata), cloudMetaId);
@@ -515,13 +904,14 @@
                 dateAdded: new Date().getTime(),
                 trashed: false,
                 isDeleted: false,
-                driveFileId: null
+                driveFileId: null,
+                project: currentProject 
             };
 
             allItems.unshift(newItem); 
             saveToStorage(); 
             editor.innerHTML = ''; 
-            showToast('已录入缓存池，等待日后同步', 'success');
+            showToast(`已录入 [${currentProject}] 缓存池`, 'success');
             renderApp();
         }
 
@@ -537,19 +927,17 @@
             }
         }
 
-        // 移入废纸篓 (软删除)
         function moveToTrash(id) {
             const item = allItems.find(i => i.id === id);
             if (item) {
                 item.trashed = true;
-                item.dateAdded = new Date().getTime(); // 刷新时间戳以触发同步
+                item.dateAdded = new Date().getTime(); 
                 saveToStorage();
                 renderApp();
                 showToast('已移入废纸篓', 'success');
             }
         }
 
-        // 从废纸篓恢复
         function restoreFromTrash(id) {
             const item = allItems.find(i => i.id === id);
             if (item) {
@@ -561,11 +949,14 @@
             }
         }
 
-        // 彻底粉碎 (墓碑化)
-        async function permanentlyDelete(id) {
-            if (!confirm("警告：彻底粉碎将抹除本机该卡片的物理数据（释放空间）。\n此操作通过增量引擎同步后，也会在其他设备上将其抹除。\n\n不可逆，继续吗？")) return;
-            
-            const item = allItems.find(i => i.id === id);
+        function triggerConfirmDelete(id) {
+            itemToDeleteId = id;
+            openModal('confirm-modal');
+        }
+
+        document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+            if (!itemToDeleteId) return;
+            const item = allItems.find(i => i.id === itemToDeleteId);
             if (item) {
                 item.isDeleted = true; 
                 item.htmlContent = ""; 
@@ -582,7 +973,8 @@
                 renderApp();
                 showToast('物理数据已彻底剥离粉碎', 'success');
             }
-        }
+            closeModal('confirm-modal');
+        });
 
         // ================= UI 与复习展示逻辑 =================
         function switchTab(tab) {
@@ -591,21 +983,20 @@
             document.getElementById('view-manage').classList.add('tab-hidden');
             document.getElementById('view-trash').classList.add('tab-hidden');
             
-            // 默认全部恢复到未激活类名状态
-            const inactiveClass = 'h-full px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
+            const inactiveClass = 'h-full px-2 sm:px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
             document.getElementById('tab-review').className = inactiveClass;
             document.getElementById('tab-manage').className = inactiveClass;
             document.getElementById('tab-trash').className = inactiveClass;
 
             if (tab === 'review') {
                 document.getElementById('view-review').classList.remove('tab-hidden');
-                document.getElementById('tab-review').className = 'h-full px-3 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
+                document.getElementById('tab-review').className = 'h-full px-2 sm:px-3 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
             } else if (tab === 'manage') {
                 document.getElementById('view-manage').classList.remove('tab-hidden');
-                document.getElementById('tab-manage').className = 'h-full px-3 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
+                document.getElementById('tab-manage').className = 'h-full px-2 sm:px-3 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
             } else if (tab === 'trash') {
                 document.getElementById('view-trash').classList.remove('tab-hidden');
-                document.getElementById('tab-trash').className = 'h-full px-3 border-b-2 border-red-500 text-red-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
+                document.getElementById('tab-trash').className = 'h-full px-2 sm:px-3 border-b-2 border-red-500 text-red-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
             }
             renderApp();
         }
@@ -623,6 +1014,7 @@
 
             return allItems.filter(item => {
                 if(item.trashed || item.isDeleted) return false; 
+                if(item.project !== currentProject) return false; 
                 
                 const startOfAdded = new Date(item.dateAdded);
                 startOfAdded.setHours(0, 0, 0, 0);
@@ -666,7 +1058,11 @@
             currentIndex = Math.max(0, Math.min(currentIndex, dueItems.length - 1));
 
             if (isToday) {
-                dateContainer.innerHTML = `<span class="font-bold text-gray-800 text-lg">今日任务</span>`;
+                dateContainer.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="font-bold text-gray-800 text-lg">今日任务</span>
+                        <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs ml-2 font-medium border border-indigo-200">${currentProject}</span>
+                    </div>`;
                 document.getElementById('time-machine-bar').className = "flex flex-wrap items-center justify-between bg-white rounded-xl shadow-sm p-4 border border-gray-100";
             } else {
                 const dateStr = simulatedDate.toISOString().split('T')[0];
@@ -685,8 +1081,8 @@
                 contentArea.innerHTML = `
                     <div class="text-center py-20">
                         <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <h2 class="text-2xl font-bold text-gray-700 mb-2">${isToday ? '今日复习任务已清空！' : '所选日期没有复习任务！'}</h2>
-                        <p class="text-gray-500">好好休息一下吧。</p>
+                        <h2 class="text-2xl font-bold text-gray-700 mb-2">${isToday ? '当前工作区复习已清空！' : '所选日期没有复习任务！'}</h2>
+                        <p class="text-gray-500">你可以切换上方项目标签，或者好好休息一下。</p>
                     </div>
                 `;
             } else {
@@ -706,7 +1102,6 @@
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
                         <button onclick="copyCurrentToClipboard()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-xl shadow-md transition-transform active:scale-95 flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             一键复制 (文字)
                         </button>
                         <button onclick="navigateReview(1)" ${currentIndex === dueItems.length - 1 ? 'disabled' : ''} class="p-3 rounded-full ${currentIndex === dueItems.length - 1 ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100'} transition-colors">
@@ -719,12 +1114,12 @@
 
         function renderManageList() {
             const listContainer = document.getElementById('manage-list');
-            const activeItems = allItems.filter(i => !i.trashed && !i.isDeleted);
+            const activeItems = allItems.filter(i => !i.trashed && !i.isDeleted && i.project === currentProject);
             
             document.getElementById('total-count').innerText = `共 ${activeItems.length} 条`;
             
             if (activeItems.length === 0) {
-                listContainer.innerHTML = '<div class="p-8 text-center text-gray-400">暂无数据，请在上方添加。</div>';
+                listContainer.innerHTML = '<div class="p-8 text-center text-gray-400">当前工作区暂无数据，请在上方添加。</div>';
                 return;
             }
 
@@ -762,12 +1157,12 @@
 
         function renderTrashList() {
             const listContainer = document.getElementById('trash-list');
-            const trashItems = allItems.filter(i => i.trashed && !i.isDeleted);
+            const trashItems = allItems.filter(i => i.trashed && !i.isDeleted && i.project === currentProject);
             
             document.getElementById('trash-count').innerText = `共 ${trashItems.length} 条`;
             
             if (trashItems.length === 0) {
-                listContainer.innerHTML = '<div class="p-10 text-center text-gray-400">回收站很干净。</div>';
+                listContainer.innerHTML = '<div class="p-10 text-center text-gray-400">当前工作区的回收站很干净。</div>';
                 return;
             }
 
@@ -781,7 +1176,7 @@
                             <button onclick="restoreFromTrash('${item.id}')" class="flex items-center gap-1 p-2 text-green-600 hover:bg-green-50 rounded-md transition-colors text-sm font-medium" title="恢复">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> 恢复
                             </button>
-                            <button onclick="permanentlyDelete('${item.id}')" class="flex items-center gap-1 p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors text-sm font-medium" title="彻底粉碎">
+                            <button onclick="triggerConfirmDelete('${item.id}')" class="flex items-center gap-1 p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors text-sm font-medium" title="彻底粉碎">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> 彻底粉碎
                             </button>
                         </div>
@@ -790,7 +1185,7 @@
             }).join('');
         }
 
-        // ================= 编辑器与杂项 =================
+        // ================= 编辑器逻辑 =================
         function setupRichTextEditorEvents() {
             const editor = document.getElementById('rich-input');
             editor.addEventListener('paste', (e) => {
@@ -798,17 +1193,14 @@
                 for (let index in items) {
                     const item = items[index];
                     if (item.kind === 'file' && item.type.includes('image/')) {
-                        e.preventDefault(); 
-                        processAndInsertImage(item.getAsFile());
-                        return; 
+                        e.preventDefault(); processAndInsertImage(item.getAsFile()); return; 
                     }
                 }
             });
             editor.addEventListener('dragover', (e) => { e.preventDefault(); editor.classList.add('drag-over'); });
             editor.addEventListener('dragleave', (e) => { e.preventDefault(); editor.classList.remove('drag-over'); });
             editor.addEventListener('drop', (e) => {
-                e.preventDefault();
-                editor.classList.remove('drag-over');
+                e.preventDefault(); editor.classList.remove('drag-over');
                 if (e.dataTransfer.files && e.dataTransfer.files.length > 0 && e.dataTransfer.files[0].type.includes('image/')) {
                     processAndInsertImage(e.dataTransfer.files[0]);
                 }
@@ -840,40 +1232,18 @@
                     range = sel.getRangeAt(0);
                     if(editor.contains(range.commonAncestorContainer)) {
                         range.deleteContents();
-                        const el = document.createElement("div");
-                        el.innerHTML = html;
+                        const el = document.createElement("div"); el.innerHTML = html;
                         const frag = document.createDocumentFragment();
                         let node, lastNode;
                         while ((node = el.firstChild)) { lastNode = frag.appendChild(node); }
                         range.insertNode(frag);
                         if (lastNode) {
-                            range = range.cloneRange();
-                            range.setStartAfter(lastNode);
-                            range.collapse(true);
-                            sel.removeAllRanges();
-                            sel.addRange(range);
+                            range = range.cloneRange(); range.setStartAfter(lastNode); range.collapse(true);
+                            sel.removeAllRanges(); sel.addRange(range);
                         }
                     } else editor.innerHTML += html;
                 }
             }
-        }
-
-        function exportData() {
-            if (allItems.length === 0) return showToast("没有数据可以导出", "error");
-            showToast("正在打包原图数据，可能会需要几秒钟...", "success");
-            setTimeout(() => {
-                const dataStr = JSON.stringify(allItems);
-                const blob = new Blob([dataStr], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `复习备份_原图无损版_${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showToast("巨无霸本地备份导出成功！", "success");
-            }, 100);
         }
 
         function copyCurrentToClipboard() {
@@ -889,18 +1259,13 @@
                 return showToast("当前是纯图片任务，请手动右键保存或截图。", "error");
             }
             const textarea = document.createElement('textarea');
-            textarea.value = textToCopy.trim();
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showToast("文字部分已提取至剪贴板！", "success");
-            } catch (err) {
-                showToast("复制失败，请手动选择复制", "error");
-            }
+            textarea.value = textToCopy.trim(); document.body.appendChild(textarea); textarea.select();
+            try { document.execCommand('copy'); showToast("文字部分已提取至剪贴板！", "success"); } 
+            catch (err) { showToast("复制失败，请手动选择复制", "error"); }
             document.body.removeChild(textarea);
         }
 
+        // ================= 后台通知 =================
         function requestNotificationPermission() {
             if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
                 Notification.requestPermission();
