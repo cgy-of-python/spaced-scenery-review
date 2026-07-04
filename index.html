@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>极简间隔复习系统 (增量同步引擎版)</title>
+    <!-- 注入极致优雅的原生 SVG Favicon，完美适配高分屏，不依赖任何外部图片链接 -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%233b82f6'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cpath d='M10 10h12v2l-4 4 4 4v2H10v-2l4-4-4-4V10z' stroke='white' stroke-width='2' fill='none' stroke-linejoin='round'/%3E%3Ccircle cx='16' cy='16' r='11' stroke='white' stroke-width='1.5' stroke-dasharray='4 2' fill='none'/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
@@ -24,21 +26,44 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
 
-    <!-- 顶部导航栏 (新增回收站 Tab) -->
-    <nav class="bg-white shadow-sm sticky top-0 z-10">
-        <div class="max-w-4xl mx-auto px-4 flex justify-center space-x-2 sm:space-x-8">
-            <button id="tab-review" onclick="switchTab('review')" class="py-4 px-2 sm:px-4 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-1.5 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                <span class="hidden sm:inline">今日复习</span><span class="sm:hidden">复习</span>
-            </button>
-            <button id="tab-manage" onclick="switchTab('manage')" class="py-4 px-2 sm:px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                <span class="hidden sm:inline">内容管理</span><span class="sm:hidden">管理</span>
-            </button>
-            <button id="tab-trash" onclick="switchTab('trash')" class="py-4 px-2 sm:px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                <span class="hidden sm:inline">回收站</span><span class="sm:hidden">废纸篓</span>
-            </button>
+    <!-- 顶部导航栏 (重构为品牌加功能键结构) -->
+    <nav class="bg-white shadow-sm sticky top-0 z-10 h-16">
+        <div class="max-w-4xl mx-auto px-4 flex justify-between items-center h-full">
+            
+            <!-- 左侧品牌 Logo 区 -->
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 shrink-0 shadow-sm rounded-lg overflow-hidden">
+                    <svg class="w-full h-full" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="logo-g" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#3b82f6"/>
+                                <stop offset="100%" stop-color="#6366f1"/>
+                            </linearGradient>
+                        </defs>
+                        <rect width="32" height="32" rx="8" fill="url(#logo-g)"/>
+                        <path d="M10 10h12v2l-4 4 4 4v2H10v-2l4-4-4-4V10z" stroke="white" stroke-width="2" fill="none" stroke-linejoin="round"/>
+                        <circle cx="16" cy="16" r="11" stroke="white" stroke-width="1.5" stroke-dasharray="4 2" fill="none"/>
+                    </svg>
+                </div>
+                <span class="font-extrabold text-lg text-gray-800 tracking-tight hidden sm:block">Spaced Flow</span>
+            </div>
+
+            <!-- 右侧 Tab 按钮区 -->
+            <div class="flex space-x-1 sm:space-x-4 h-full items-center">
+                <button id="tab-review" onclick="switchTab('review')" class="h-full px-3 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <span>复习</span>
+                </button>
+                <button id="tab-manage" onclick="switchTab('manage')" class="h-full px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    <span>管理</span>
+                </button>
+                <button id="tab-trash" onclick="switchTab('trash')" class="h-full px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span>废纸篓</span>
+                </button>
+            </div>
+
         </div>
     </nav>
 
@@ -168,18 +193,6 @@
         let accessToken = null;
 
         // --- 核心状态 ---
-        /*
-        数据结构全面升级：
-        {
-            id: UUID,
-            rawText: String (预览用),
-            htmlContent: String (巨大内容),
-            dateAdded: Timestamp (排期基准/最后修改时间),
-            trashed: Boolean (是否在废纸篓),
-            isDeleted: Boolean (墓碑：是否彻底粉碎，彻底粉碎的只有骨架，无htmlContent),
-            driveFileId: String (对应的 Google Drive 独立文件 ID)
-        }
-        */
         let allItems = []; 
         let simulatedDate = new Date();
         let currentIndex = 0;
@@ -314,7 +327,6 @@
         }
 
         // ================= 全新 Delta Sync 增量引擎 =================
-        
         async function fetchDriveAPI(url, options = {}) {
             options.headers = { ...options.headers, 'Authorization': `Bearer ${accessToken}` };
             const res = await fetch(url, options);
@@ -389,7 +401,7 @@
                             // 本地的状态更新，采用本地状态，不用重传大文件，只需继承其云端文件id
                             local.driveFileId = cloud.driveFileId;
                         } else if (local.dateAdded < cloud.dateAdded) {
-                            // 云端的状态更新（比如在手机上改了排期或删除了） -> 覆盖本地的元数据
+                            // 云端的状态更新 -> 覆盖本地的元数据
                             local.dateAdded = cloud.dateAdded;
                             local.trashed = cloud.trashed;
                             local.isDeleted = cloud.isDeleted;
@@ -438,23 +450,33 @@
                     });
                 }
 
-                // 5. 执行按需上传 (仅针对新增的不可变内容)
+                // 5. 执行按需上传 (本地独有或比云端新的文件)
                 for (let i = 0; i < toUploadLocalItems.length; i++) {
-                    const lItem = toUploadLocalItems[i];
-                    showLoading(`正在打包上传新增碎片...`, `进度: ${i + 1} / ${toUploadLocalItems.length}`);
-                    
-                    // 如果本地已经是墓碑了，其实连上传都不用传碎片，直接留空id即可
-                    if (!lItem.isDeleted) {
-                        const contentObj = JSON.stringify({ id: lItem.id, htmlContent: lItem.htmlContent });
-                        const driveFileId = await uploadFileContent(`${lItem.id}.json`, contentObj);
-                        lItem.driveFileId = driveFileId;
+                    const localItem = toUploadLocalItems[i];
+                    // 如果该任务已经是空内容或者是墓碑，就不必浪费流量上传不存在的文件了
+                    if (localItem.isDeleted || !localItem.htmlContent) continue;
+
+                    showLoading(`正在上传新知识原图...`, `进度: ${i + 1} / ${toUploadLocalItems.length}`);
+                    try {
+                        const individualFileName = `${localItem.id}.json`;
+                        // 检索该大文件是否已经在云端目录中独立存在
+                        let individualFileId = await findFileByName(individualFileName);
+                        const individualPayload = JSON.stringify({ htmlContent: localItem.htmlContent });
+                        
+                        individualFileId = await uploadFileContent(individualFileName, individualPayload, individualFileId);
+                        localItem.driveFileId = individualFileId;
+                    } catch (e) {
+                        console.error("上传单独大文件失败", e);
                     }
                 }
 
-                // 6. 重建云端元数据索引
-                showLoading("同步进入尾声", "正在更新云端灯塔索引...");
+                // 重新将合并后的数据整理成数组，并倒序排列
                 allItems.sort((a, b) => b.dateAdded - a.dateAdded);
-                
+                await saveToStorage(); 
+                renderApp();
+
+                // 6. 将最轻量、纯净的索引推回云端目录
+                showLoading("同步进入尾声", "正在更新云端灯塔索引...");
                 const newCloudMetadata = allItems.map(i => ({
                     id: i.id,
                     rawText: i.rawText,
@@ -465,11 +487,6 @@
                 }));
 
                 await uploadFileContent(META_FILE_NAME, JSON.stringify(newCloudMetadata), cloudMetaId);
-                
-                // 7. 保存到本地底层库
-                await saveToStorage();
-                renderApp();
-
                 showToast(`差异合并完美结束！新增↓${toDownloadCloudMeta.length} ↑${toUploadLocalItems.length}`, "success");
 
             } catch (error) {
@@ -481,7 +498,6 @@
         }
 
         // ================= 数据状态流转机制 (废纸篓与墓碑) =================
-
         function saveNewItem() {
             const editor = document.getElementById('rich-input');
             const htmlContent = editor.innerHTML;
@@ -526,7 +542,7 @@
             const item = allItems.find(i => i.id === id);
             if (item) {
                 item.trashed = true;
-                item.dateAdded = new Date().getTime(); // 刷新时间戳以触发同步策略
+                item.dateAdded = new Date().getTime(); // 刷新时间戳以触发同步
                 saveToStorage();
                 renderApp();
                 showToast('已移入废纸篓', 'success');
@@ -551,16 +567,15 @@
             
             const item = allItems.find(i => i.id === id);
             if (item) {
-                item.isDeleted = true; // 立墓碑
-                item.htmlContent = ""; // 掏空实体数据
+                item.isDeleted = true; 
+                item.htmlContent = ""; 
                 item.dateAdded = new Date().getTime(); 
                 
-                // 尝试立刻清理云端的对应碎片(如果授权了且有记录的话)以节约云盘
                 if (accessToken && item.driveFileId) {
                     try {
                         await fetchDriveAPI(`https://www.googleapis.com/drive/v3/files/${item.driveFileId}`, { method: 'DELETE' });
                         item.driveFileId = null;
-                    } catch(e) { console.warn("尝试删除云端文件失败，可能已不存在"); }
+                    } catch(e) { console.warn("尝试删除云端文件失败"); }
                 }
                 
                 saveToStorage();
@@ -576,22 +591,21 @@
             document.getElementById('view-manage').classList.add('tab-hidden');
             document.getElementById('view-trash').classList.add('tab-hidden');
             
-            document.getElementById('tab-review').className = 'py-4 px-2 sm:px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors';
-            document.getElementById('tab-manage').className = 'py-4 px-2 sm:px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors';
-            document.getElementById('tab-trash').className = 'py-4 px-2 sm:px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors';
+            // 默认全部恢复到未激活类名状态
+            const inactiveClass = 'h-full px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
+            document.getElementById('tab-review').className = inactiveClass;
+            document.getElementById('tab-manage').className = inactiveClass;
+            document.getElementById('tab-trash').className = inactiveClass;
 
             if (tab === 'review') {
                 document.getElementById('view-review').classList.remove('tab-hidden');
-                document.getElementById('tab-review').classList.replace('border-transparent', 'border-blue-500');
-                document.getElementById('tab-review').classList.replace('text-gray-500', 'text-blue-600');
+                document.getElementById('tab-review').className = 'h-full px-3 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
             } else if (tab === 'manage') {
                 document.getElementById('view-manage').classList.remove('tab-hidden');
-                document.getElementById('tab-manage').classList.replace('border-transparent', 'border-blue-500');
-                document.getElementById('tab-manage').classList.replace('text-gray-500', 'text-blue-600');
+                document.getElementById('tab-manage').className = 'h-full px-3 border-b-2 border-blue-500 text-blue-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
             } else if (tab === 'trash') {
                 document.getElementById('view-trash').classList.remove('tab-hidden');
-                document.getElementById('tab-trash').classList.replace('border-transparent', 'border-red-500');
-                document.getElementById('tab-trash').classList.replace('text-gray-500', 'text-red-600');
+                document.getElementById('tab-trash').className = 'h-full px-3 border-b-2 border-red-500 text-red-600 font-medium flex items-center gap-1.5 transition-colors focus:outline-none';
             }
             renderApp();
         }
@@ -608,7 +622,7 @@
             startOfSimulated.setHours(0, 0, 0, 0);
 
             return allItems.filter(item => {
-                if(item.trashed || item.isDeleted) return false; // 过滤掉垃圾和墓碑
+                if(item.trashed || item.isDeleted) return false; 
                 
                 const startOfAdded = new Date(item.dateAdded);
                 startOfAdded.setHours(0, 0, 0, 0);
@@ -692,6 +706,7 @@
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
                         <button onclick="copyCurrentToClipboard()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-xl shadow-md transition-transform active:scale-95 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             一键复制 (文字)
                         </button>
                         <button onclick="navigateReview(1)" ${currentIndex === dueItems.length - 1 ? 'disabled' : ''} class="p-3 rounded-full ${currentIndex === dueItems.length - 1 ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100'} transition-colors">
@@ -747,7 +762,6 @@
 
         function renderTrashList() {
             const listContainer = document.getElementById('trash-list');
-            // 回收站只展示被放入废纸篓但还没被彻底粉碎的数据
             const trashItems = allItems.filter(i => i.trashed && !i.isDeleted);
             
             document.getElementById('trash-count').innerText = `共 ${trashItems.length} 条`;
@@ -842,6 +856,24 @@
                     } else editor.innerHTML += html;
                 }
             }
+        }
+
+        function exportData() {
+            if (allItems.length === 0) return showToast("没有数据可以导出", "error");
+            showToast("正在打包原图数据，可能会需要几秒钟...", "success");
+            setTimeout(() => {
+                const dataStr = JSON.stringify(allItems);
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `复习备份_原图无损版_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast("巨无霸本地备份导出成功！", "success");
+            }, 100);
         }
 
         function copyCurrentToClipboard() {
